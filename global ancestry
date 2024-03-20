@@ -1,0 +1,97 @@
+#### Primeiro precisamos nos certificar que referencia e alvo estão no mesmo genoma de referência 
+#### Dados baixados do 1KG estão em HG38, com isso, o mais fácil é passar os dados alvo para HG38 também 
+### Dados alvo precisam já estar com controle de qualidade realizado 
+
+#Nesse tutorial iremos trabalhar somente com o chr 21 e com uma amostra menos do 1KG
+
+### Para iniciar iremos ver a pasta que estão todos os dados
+### Dentro desta pasta teremos subpastas, uma com as amostras referência, outra com as amostras alvo
+ls ../pasta_trabalho_central/admixture
+
+##Mudando para a pasta que cada um irá rodar seus dados
+cd pasta_individual
+####### Preciso decidir se os alunos vão criar a pastas ou se eu vou deixar criada pra cada pessoa 
+# Na pasta individual vai ter as pastas: alvo_pelotas; juntos_alvo_ref; ref1kg_4anc; ref1kg3anc; arquivos_intermed
+
+### Se certificar que alvo e ref estão com o arquivo bim igual
+### como no meu caso a ref está com chr, pos, alelo 1 e alelo 2 e alvo está com chr pos, vou deixar os dois com chr pos 
+
+##Para 3 anc 
+cd ref1kg_3anc/
+cp 3anc_1kg_hgdp_chr21.bim ori_3anc_1kg_hgdp_chr21.bim
+awk '{print $1, $1":"$4, $3, $4, $5, $6}' ori_3anc_1kg_hgdp_chr21.bim > 3anc_1kg_hgdp_chr21.bim
+
+##Para 4 anc 
+cd ref1kg_4anc/
+cp 4anc_1kg_hgdp_chr21.bim ori_4anc_1kg_hgdp_chr21.bim
+awk '{print $1, $1":"$4, $3, $4, $5, $6}' ori_4anc_1kg_hgdp_chr21.bim > 4anc_1kg_hgdp_chr21.bim
+
+
+### Voltar para sua pasta de trabalho 
+cd ../
+
+# excluir positions duplicadas
+
+plink --bfile ref1kg_3anc/3anc_1kg_hgdp_chr21 --list-duplicate-vars --out ./arquivos_intermed/ref3_chr21
+
+plink --bfile ref1kg_4anc/4anc_1kg_hgdp_chr21 --list-duplicate-vars --out ./arquivos_intermed/ref4_chr21
+
+plink --bfile alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21 --list-duplicate-vars --out ./arquivos_intermed/alvo_chr21
+
+## Checando se há algo nesses arquivos 
+#### provavelmente todos os arquivos estão vazios
+cat ./arquivos_intermed/ref3_chr21.dupvar
+
+cat ./arquivos_intermed/ref4_chr21.dupvar
+
+cat ./arquivos_intermed/alvo_chr21.dupvar
+
+
+
+#Garantindo o mesmo num de SNPS nos dois arquivos e garantindos que nao há alelos trocados
+
+plink --bfile alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21 --extract ref1kg_3anc/3anc_1kg_hgdp_chr21.bim --make-bed --out ./arquivos_intermed/pre1_alvopelotas3_chr21
+
+plink --bfile alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21 --extract ref1kg_4anc/4anc_1kg_hgdp_chr21.bim --make-bed --out ./arquivos_intermed/pre1_alvopelotas4_chr21
+
+
+plink --bfile ref1kg_3anc/3anc_1kg_hgdp_chr21 --extract alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21.bim --make-bed --out ./arquivos_intermed/pre1_ref3anc_chr21
+
+plink --bfile ref1kg_4anc/4anc_1kg_hgdp_chr21 --extract alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21.bim --make-bed --out ./arquivos_intermed/pre1_ref4anc_chr21
+
+#Extraindo as multialelicas antes de realizar o merge
+
+plink --bfile ./arquivos_intermed/pre1_alvopelotas3_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_alvopelotas3_chr21
+
+plink --bfile ./arquivos_intermed/pre1_alvopelotas4_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_alvopelotas4_chr21
+
+plink --bfile ./arquivos_intermed/pre1_ref3anc_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_ref3anc_chr21
+
+plink --bfile ./arquivos_intermed/pre1_ref4anc_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_ref4anc_chr21
+
+# Juntando e fazendo o QC para ser utilizado depois para o ADMIXTURE.
+#Juntar os arquivos, alvo e referência
+
+########### 3 anc
+plink --bfile ./arquivos_intermed/pre2_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre_alvoref_3anc_chr21
+
+### da um erro e fala que gerou arquivos que podem ser flipados, e indica o arquivo, dando um wc no arquivo pra ver quantos são os arquivos que deram erro
+### Deu 2197 variantes com esse problema
+wc ./arquivos_intermed/pre_alvoref_3anc_chr21-merge.missnp
+
+###### Se der problema em pouca gente, excluir 
+###Se der em muita gente eu vou fazer um flip e seguir a vida 
+
+
+
+
+
+
+
+
+###########4 anc
+plink --bfile ./arquivos_intermed/pre2_alvopelotas4_chr21 --bmerge ./arquivos_intermed/pre2_ref4anc_chr21 --make-bed --out ./arquivos_intermed/pre_alvoref_4anc_chr21
+
+### da um erro e fala que gerou arquivos que podem ser flipados, e indica o arquivo, dando um wc no arquivo pra ver quantos são os arquivos que deram erro
+### Deu 2197 variantes com esse problema
+wc ./arquivos_intermed/pre_alvoref_4anc_chr21-merge.missnp
