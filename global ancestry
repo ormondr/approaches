@@ -170,6 +170,10 @@ Karitiana	Karitiana in Brazil
 Maya	Maya in Mexico
 Pima	Pima in Mexico
 
+pong -m pong_filemap -i ind2pop.txt -n pop_order_expandednames.txt
+
+mudei os nomes mas preciso ver se volto pros nomes de antes
+
 
 
 
