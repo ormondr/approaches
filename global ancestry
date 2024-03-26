@@ -113,6 +113,24 @@ mkdir pelotas_admixture
 mv pelotas_3anc_QCed_chr21.3.* ./pelotas_admixture
 
 
+######## O admixture não tem colunas, então para ver melhor o que a gente quer, é preciso juntar com o arquivo fam que foi utilizado
+### mudar primeiro para a pasta "pelotas_admixture" e rodar
+
+#criando um arquivo só com a segunda coluna
+cut -d ' ' -f 2 ../merge_alvo_ref/pelotas_3anc_QCed_chr21.fam > idsfam_admixture.txt
+
+##juntando com o arquivo de saída do admixture
+### não salvo ainda como arquivo final pq eu quero olhar esse arquivo e ver quais são cada uma das colunas, olhando para as referências
+
+paste -d ' ' idsfam_admixture.txt pelotas_3anc_QCed_chr21.3.Q > pelotas_3anc_chr21_preadmixture
+
+### removendo arquivo temporário
+rm idsfam_admixture.txt
+
+### sabendo qual é cada uma delas, eu coloco esse cabeçalho (costumo colocar com nano mesmo)
+
+###
+
 ### instalando o pong
 pip3 install pong
 
@@ -136,7 +154,7 @@ awk '{print $2}' ../3_anc > ../pre_pelotas_3anc.ind2map
 head -207 ../pep_txt > ../pre_ind
 tail -118 ../pep_txt > ../pos_ind
 
-cat ../pre_ind ../pre_pelotas_3anc.ind2map ../pos_ind > ./pelotas_3anc.ind2map
+cat ../pre_ind ../pre_pelotas_3anc.ind2map ../pos_ind > ind2pop.txt
 
 
 # precisa ver a ordem no arquivo fam pra criar esse arquivo direito
@@ -159,7 +177,7 @@ cat ../pre_ind ../pre_pelotas_3anc.ind2map ../pos_ind > ./pelotas_3anc.ind2map
 
 #### abrindo pra ver esse arquivo:
 
-head pelotas_3anc.ind2map
+head ind2pop.txt
 
 #### O arquivo ".expanded names" tem as siglas e o que significa cada uma delas, separando a primeira e a segunda coluna por tab
 #Exemplo:
@@ -172,17 +190,21 @@ Pima	Pima in Mexico
 
 pong -m pong_filemap -i ind2pop.txt -n pop_order_expandednames.txt
 
-mudei os nomes mas preciso ver se volto pros nomes de antes
 
 
+### é possível mudar a ordem das cores
+
+nano
+#colar (no caso dos códigos de cores, o # faz parte do código:
+
+#6094c3
+#63bc6a
+#e04b4b
+
+#salvar como: cores_pong
+
+## rodar novamente: 
+pong -m pong_filemap -i ind2pop.txt -n pop_order_expandednames.txt -l cores_pong
 
 
-### agora tentando de fato rodar o pong 
-
-
-###########4 anc
-plink --bfile ./arquivos_intermed/pre2_alvopelotas4_chr21 --bmerge ./arquivos_intermed/pre2_ref4anc_chr21 --make-bed --out ./arquivos_intermed/pre_alvoref_4anc_chr21
-
-### da um erro e fala que gerou arquivos que podem ser flipados, e indica o arquivo, dando um wc no arquivo pra ver quantos são os arquivos que deram erro
-### Deu 2197 variantes com esse problema
-wc ./arquivos_intermed/pre_alvoref_4anc_chr21-merge.missnp
+######## checar o dado pq ta estranho a pop iberica miscigenando e a nat americana nao
