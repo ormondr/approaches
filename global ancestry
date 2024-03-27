@@ -1,14 +1,20 @@
-#Nesse tutorial iremos trabalhar com todos os cromossomos
+########## Mergir dados alvo e de referencia de ancestralidade
+
+####### baixar os dados de ancestralidade do 1KGenomes 
+
+
+#### dados já baixados de: https://gnomad.broadinstitute.org/downloads#v3-hgdp-1kg
+### HGDP +1KGenomes callset - ir para os dados divididos por cromossomos - realizei um qc na conversao de vcf para bed, bim e fam com: 
+(levar esse dado para ser usado)
+
 
 
 ### Para iniciar iremos ver a pasta que estão todos os dados
 ### Dentro desta pasta teremos subpastas, uma com as amostras referência, outra com as amostras alvo
-ls ../pasta_trabalho_central/admixture
 
-##Mudando para a pasta que cada um irá rodar seus dados
-cd pasta_individual
-####### Preciso decidir se os alunos vão criar a pastas ou se eu vou deixar criada pra cada pessoa 
-# Na pasta individual vai ter as pastas: alvo_pelotas; juntos_alvo_ref; ref1kg_4anc; ref1kg3anc; arquivos_intermed
+###fazendo as pastas de trabalho
+mkdir ../"pasta_trabalho_central"/admixture
+
 
 ### Se certificar que alvo e ref estão com o arquivo bim igual
 ### como no meu caso a ref está com chr, pos, alelo 1 e alelo 2 e alvo está com chr pos, vou deixar os dois com chr pos 
@@ -22,6 +28,79 @@ awk '{print $1, $1":"$4, $3, $4, $5, $6}' ori_3anc_1kg_hgdp_chr21.bim > 3anc_1kg
 cd ref1kg_4anc/
 cp 4anc_1kg_hgdp_chr21.bim ori_4anc_1kg_hgdp_chr21.bim
 awk '{print $1, $1":"$4, $3, $4, $5, $6}' ori_4anc_1kg_hgdp_chr21.bim > 4anc_1kg_hgdp_chr21.bim
+
+
+#Juntar os arquivos, alvo e referência
+
+for i in {1..22}; do plink --bfile ./PEP_INPD/paisINPD/paisINPD2020_chr${i}_pre --bmerge ./PEP_INPD/PEP_ESALQ/PEP_ESALQ_hg38_chr${i}_pre --allow-no-sex --make-bed --out ./PEP_INPD/juntos_PEP_INPD/pre_PEP_INPD${i}; done
+
+
+## Não gerou arquivo "merge.missnp"
+
+#Fazendo QC final já do arquivo juntado --Finalizada a junção das coortes
+
+for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/pre_PEP_INPD${i} --geno 0.1 --maf 0.01 --make-bed --out ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}; done
+
+
+##Agora que as duas coortes estãõ juntas, vou juntar com o alvo 
+
+# ref está em .vcf, transformar em bed bim e fam para juntar e posteriormente usar no ADMIXTURE 
+##A flag --keep-allele-order precisa ser usada no plink 1.9, pois se não usar, ele muda a ordem dos alelos, se usar plink2 não precisa 
+## No futuro talvez seja bom ver o que ocorre sem --maf pois variantes raras também podem ser importantes para o projeto 
+
+
+for i in {1..22}; do plink --vcf ./phased_1kg_hgdp/QC_phased_gnomad.genomes.v3.1.2.hgdp_tgp.chr${i}.vcf.gz --keep-allele-order --const-fid 0 --maf 0.01 --make-bed --out ./REF_1kg_hgdp/1kg_hgdp_chr${i}; done
+
+
+#Deixar arquivo .bim da REF no mesmo padrao do alvo, salvar antes com "_ori" e depois como estava antes 
+
+Tentei: for i in {1..22}; do mv ./REF_1kg_hgdp/1kg_hgdp_chr${i}.bim ./REF_1kg_hgdp/1kg_hgdp_chr{i}_ori.bim; done
+
+Mas nao consegui colocar todos ai acabei fazendo um por um com "cp"
+
+for i in {1..22}; do awk '{print $1 , $1":"$4":"$5":"$6 , $3 , $4 , $5 , $6}' ./REF_1kg_hgdp/1kg_hgdp_chr${i}_ori.bim > ./REF_1kg_hgdp/1kg_hgdp_chr${i}.bim; done
+
+# excluir positions duplicadas e separar o alvo por cromossomos
+
+## nesses arquivos nao tem vars duplicadas, se tivesse teria que excluir, rodei o comando e chequei arquivo de saida
+
+for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i} --list-duplicate-vars; done
+for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i} --list-duplicate-vars; done
+
+
+#Garantindo o mesmo num de SNPS nos dois arquivos e garantindos que nao há alelos trocados
+
+for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i} --extract ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}.bim --make-bed --out ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre2; done
+
+for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i} --extract ./REF_1kg_hgdp/1kg_hgdp_chr${i}.bim --make-bed --out ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre2; done
+
+#Extraindo as multialelicas antes de realizar o merge - provavelmente nao tem mas faço dessa forma para garantir
+
+for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre2 --snps-only just-acgt --make-bed --out ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre; done
+
+for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre2 --snps-only just-acgt --make-bed --out ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre; done
+
+Juntar os arquivos, alvo e referência
+
+for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre --bmerge ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre --allow-no-sex --make-bed --out ./PEP_INPD/1KG_HGDP_PEP_INPD/pre_1KG_HGDP_PEP_INPD${i}; done
+
+## Não gerou arquivo "merge.missnp"
+
+#Fazendo QC final já do arquivo juntado --Finalizada a junção das coortes
+
+for i in {1..22}; do plink --bfile ./PEP_INPD/1KG_HGDP_PEP_INPD/pre_1KG_HGDP_PEP_INPD${i} --geno 0.1 --maf 0.01 --make-bed --out ./PEP_INPD/1KG_HGDP_PEP_INPD/1KG_HGDP_PEP_INPD${i}; done
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ### Voltar para sua pasta de trabalho 
