@@ -1,8 +1,5 @@
-#### Primeiro precisamos nos certificar que referencia e alvo estão no mesmo genoma de referência 
-#### Dados baixados do 1KG estão em HG38, com isso, o mais fácil é passar os dados alvo para HG38 também 
-### Dados alvo precisam já estar com controle de qualidade realizado 
+#Nesse tutorial iremos trabalhar com todos os cromossomos
 
-#Nesse tutorial iremos trabalhar somente com o chr 21 e com uma amostra menos do 1KG
 
 ### Para iniciar iremos ver a pasta que estão todos os dados
 ### Dentro desta pasta teremos subpastas, uma com as amostras referência, outra com as amostras alvo
