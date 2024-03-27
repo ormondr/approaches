@@ -1,0 +1,20 @@
+### Script feito por Lucas Ito e adaptado por Rafaella Ormond 
+
+git clone https://github.com/sritchie73/liftOverPlink.git
+
+# https://github.com/sritchie73/liftOverPlink
+
+cd /mnt/genetica_2/liftOverPlink
+
+plink_file="caminho/arquivosplink"
+prefix_hg19="caminho/prefixodoarquivo"
+output="caminho/arquivooutput"
+
+plink --bfile "$plink_file" --recode --out "$prefix_hg19"
+python3 liftOverPlink.py --bin ./liftOver --map "$prefix_hg19.map" --out lifted --chain hg19ToHg38.over.chain.gz
+python3 rmBadLifts.py --map lifted.map --out good_lifted.map --log bad_lifted.dat
+cut -f 2 bad_lifted.dat > to_exclude.dat
+cut -f 4 lifted.bed.unlifted | sed "/^#/d" >> to_exclude.dat 
+plink --file "$prefix_hg19" --recode --out lifted --exclude to_exclude.dat 
+plink --ped lifted.ped --map good_lifted.map --recode --out "$output"
+plink --ped "$output.ped" --map "$output.map" --make-bed --out "$output"
