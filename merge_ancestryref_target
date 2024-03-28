@@ -45,7 +45,7 @@ awk '{print $1, $1":"$4, $3, $4, $5, $6}' "$ref_plink_file_ori.bim" > "$ref_plin
 
 ### Separar alvo por cromossomos (se ainda não estiver)
 
-"$plink" --bfile "$alvo_plink_file" --chr${i} 
+for i in {1..22}; do "$plink" --bfile "$alvo_plink_file" --chr${i} --make-bed --out "$alvo_plink_file_chr${i}" -- ; done
 
 
 ##Agora que as duas coortes estãõ juntas, vou juntar com o alvo 
