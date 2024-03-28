@@ -7,6 +7,12 @@
 ### HGDP +1KGenomes callset - ir para os dados divididos por cromossomos - realizei um qc na conversao de vcf para bed, bim e fam com: 
 (levar esse dado para ser usado)
 
+#### se baixar dessa forma baixa em vcf, separado por cromossomos e é preciso transformar em bed, bim e fam 
+## A flag --keep-allele-order precisa ser usada no plink 1.9, pois se não usar, ele muda a ordem dos alelos, se usar plink2 não precisa 
+## fazer um controle de qualidade bem basico - mudar os caminhos de pasta de acordo com o seu computador 
+
+#######for i in {1..22}; do plink --vcf ./phased_1kg_hgdp/QC_phased_gnomad.genomes.v3.1.2.hgdp_tgp.chr${i}.vcf.gz --keep-allele-order --const-fid 0 --maf 0.01 --make-bed --out ./REF_1kg_hgdp/1kg_hgdp_chr${i}; done
+
 ### Para iniciar iremos ver a pasta que estão todos os dados
 ### Dentro desta pasta teremos subpastas, uma com as amostras referência, outra com as amostras alvo
 
@@ -14,47 +20,35 @@
 mkdir ../"pasta_trabalho_central"/admixture
 
 
-ref_plink_file="caminho/arquivosplink"
-alvo_plink_file="caminho/arquivosplink"
-prefix_alvo="caminho/prefixodoarquivo_alvo"
-prefix_ref="caminho/prefixodoarquivo_ref"
-output_merged="caminho/arquivooutput"
-
+ref_plink_file=" "
+alvo_plink_file=" "
+prefix_alvo=" "
+prefix_ref=" "
+output_merged=" "
+folder_alvo = " "
+folder_ref = " "
+folder_interm = " "
+folder_merged = " "
+plink = " "
 
 ### Se certificar que alvo e ref estão com o arquivo bim igual
 ### como no meu caso a ref está com chr, pos, alelo 1 e alelo 2 e alvo está com chr pos, vou deixar os dois com chr pos 
 
-##Para 3 anc 
-cd ref1kg_3anc/
-cp 3anc_1kg_hgdp_chr21.bim ori_3anc_1kg_hgdp_chr21.bim
-awk '{print $1, $1":"$4, $3, $4, $5, $6}' ori_3anc_1kg_hgdp_chr21.bim > 3anc_1kg_hgdp_chr21.bim
+## Ref 3 anc 
+###copiar o bim para um arquivo "_ori" e depois de editar, salvar como estava antes 
+cp "$ref_plink_file.bim" "$ref_plink_file_ori.bim"
+awk '{print $1, $1":"$4, $3, $4, $5, $6}' "$ref_plink_file_ori.bim" > "$ref_plink_file.bim"
 
-##Para 4 anc 
-cd ref1kg_4anc/
-cp 4anc_1kg_hgdp_chr21.bim ori_4anc_1kg_hgdp_chr21.bim
-awk '{print $1, $1":"$4, $3, $4, $5, $6}' ori_4anc_1kg_hgdp_chr21.bim > 4anc_1kg_hgdp_chr21.bim
+### Se for preciso fazer o mesmo pro alvo 
+cp "$ref_plink_file.bim" "$ref_plink_file_ori.bim"
+awk '{print $1, $1":"$4, $3, $4, $5, $6}' "$ref_plink_file_ori.bim" > "$ref_plink_file.bim"
 
+### Separar alvo por cromossomos (se ainda não estiver)
 
-#Juntar os arquivos, alvo e referência
-
-for i in {1..22}; do plink --bfile ./PEP_INPD/paisINPD/paisINPD2020_chr${i}_pre --bmerge ./PEP_INPD/PEP_ESALQ/PEP_ESALQ_hg38_chr${i}_pre --allow-no-sex --make-bed --out ./PEP_INPD/juntos_PEP_INPD/pre_PEP_INPD${i}; done
-
-
-## Não gerou arquivo "merge.missnp"
-
-#Fazendo QC final já do arquivo juntado --Finalizada a junção das coortes
-
-for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/pre_PEP_INPD${i} --geno 0.1 --maf 0.01 --make-bed --out ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}; done
+"$plink" --bfile "$alvo_plink_file" --chr${i} 
 
 
 ##Agora que as duas coortes estãõ juntas, vou juntar com o alvo 
-
-# ref está em .vcf, transformar em bed bim e fam para juntar e posteriormente usar no ADMIXTURE 
-##A flag --keep-allele-order precisa ser usada no plink 1.9, pois se não usar, ele muda a ordem dos alelos, se usar plink2 não precisa 
-## No futuro talvez seja bom ver o que ocorre sem --maf pois variantes raras também podem ser importantes para o projeto 
-
-
-for i in {1..22}; do plink --vcf ./phased_1kg_hgdp/QC_phased_gnomad.genomes.v3.1.2.hgdp_tgp.chr${i}.vcf.gz --keep-allele-order --const-fid 0 --maf 0.01 --make-bed --out ./REF_1kg_hgdp/1kg_hgdp_chr${i}; done
 
 
 #Deixar arquivo .bim da REF no mesmo padrao do alvo, salvar antes com "_ori" e depois como estava antes 
