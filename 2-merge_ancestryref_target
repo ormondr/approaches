@@ -20,16 +20,18 @@
 mkdir ../"pasta_trabalho_central"/admixture
 
 
-ref_plink_file=" "
-alvo_plink_file=" "
-prefix_alvo=" "
-prefix_ref=" "
-output_merged=" "
-folder_alvo = " "
-folder_ref = " "
-folder_interm = " "
-folder_merged = " "
-plink = " "
+ref_plink_file=""
+alvo_plink_file=""
+prefix_alvo=""
+prefix_ref=""
+output_merged=""
+folder_alvo=""
+folder_ref=""
+file_intermed_alvo=""
+file_intermed_ref=""
+file_intermed_merge=""
+file_merged=""
+plink=""
 
 ### Se certificar que alvo e ref estão com o arquivo bim igual
 ### como no meu caso a ref está com chr, pos, alelo 1 e alelo 2 e alvo está com chr pos, vou deixar os dois com chr pos 
@@ -43,56 +45,85 @@ awk '{print $1, $1":"$4, $3, $4, $5, $6}' "$ref_plink_file_ori.bim" > "$ref_plin
 cp "$ref_plink_file.bim" "$ref_plink_file_ori.bim"
 awk '{print $1, $1":"$4, $3, $4, $5, $6}' "$ref_plink_file_ori.bim" > "$ref_plink_file.bim"
 
-### Separar alvo por cromossomos (se ainda não estiver)
+### Separar alvo por cromossomos (se ainda não estiver) e listar posições duplicadas 
 
 for i in {1..22}; do "$plink" --bfile "$alvo_plink_file" --chr ${i} --make-bed --out "${alvo_plink_file}_chr${i}"; done
+for i in {1..22}; do "$plink" --bfile "${alvo_plink_file}_chr${i}" --list-duplicate-vars --out "${file_intermed}_chr${i}" ; done
+
+###### dar um head nos arquivos para ver se de fato criou os arquivos com as variantes duplicadas
+
+###### se criou: 
+
+for i in {1..22}; do "$plink" --bfile "${alvo_plink_file}_chr${i}" --exclude "${file_intermed_alvo}_chr${i}.dupvar" --make-bed --out "${file_intermed_alvo}_chr${i}_semdups"; done
+
+########## se tiver excluido as pos duplicadas, precisa usar a sintaze desse arquivo pra juntar depoois, se nao, usar o arquivo anterior normalmente 
 
 
-##Agora que as duas coortes estão juntas, vou juntar com o alvo 
-
-
-#Deixar arquivo .bim da REF no mesmo padrão do alvo, salvar antes com "_ori" e depois como estava antes 
-
-Tentei: for i in {1..22}; do mv ./REF_1kg_hgdp/1kg_hgdp_chr${i}.bim ./REF_1kg_hgdp/1kg_hgdp_chr{i}_ori.bim; done
-
-Mas nao consegui colocar todos ai acabei fazendo um por um com "cp"
-
-for i in {1..22}; do awk '{print $1 , $1":"$4":"$5":"$6 , $3 , $4 , $5 , $6}' ./REF_1kg_hgdp/1kg_hgdp_chr${i}_ori.bim > ./REF_1kg_hgdp/1kg_hgdp_chr${i}.bim; done
-
-# excluir positions duplicadas e separar o alvo por cromossomos
-
-## nesses arquivos nao tem vars duplicadas, se tivesse teria que excluir, rodei o comando e chequei arquivo de saida
-
-for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i} --list-duplicate-vars; done
-for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i} --list-duplicate-vars; done
-
+############################# usando o arquivo sem dups - se tiver excluido 
 
 #Garantindo o mesmo num de SNPS nos dois arquivos e garantindos que nao há alelos trocados
 
-for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i} --extract ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}.bim --make-bed --out ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre2; done
+for i in {1..22}; do plink --bfile "${ref_plink_file}_chr${i}" --extract "${file_intermed_alvo}_chr${i}_semdups.bim" --make-bed --out "${file_intermed_ref}_chr${i}_pre2"; done
 
-for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i} --extract ./REF_1kg_hgdp/1kg_hgdp_chr${i}.bim --make-bed --out ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre2; done
+for i in {1..22}; do plink --bfile "${file_intermed_alvo}_chr${i}_semdups" --extract --bfile "${ref_plink_file}_chr${i}.bim" --make-bed --out "${file_intermed_alvo}_chr${i}_pre2"
+
+
+############################# se não tiver excluído dup 
+
+for i in {1..22}; do plink --bfile "${ref_plink_file}_chr${i}" --extract  "${alvo_plink_file}_chr${i}.bim" --make-bed --out "${file_intermed_ref}_chr${i}_pre2"; done
+
+for i in {1..22}; do plink --bfile "${alvo_plink_file}_chr${i}" --extract --bfile "${ref_plink_file}_chr${i}.bim" --make-bed --out "${file_intermed_alvo}_chr${i}_pre2"
+
+
+
+
 
 #Extraindo as multialelicas antes de realizar o merge - provavelmente nao tem mas faço dessa forma para garantir
 
-for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre2 --snps-only just-acgt --make-bed --out ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre; done
+for i in {1..22}; do plink --bfile "${file_intermed_ref}_chr${i}_pre2" --snps-only just-acgt --make-bed --out "${file_intermed_ref}_chr${i}_pre"; done
 
-for i in {1..22}; do plink --bfile ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre2 --snps-only just-acgt --make-bed --out ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre; done
+for i in {1..22}; do plink --bfile  "${file_intermed_alvo}_chr${i}_pre2" --snps-only just-acgt --make-bed --out "${file_intermed_alvo}_chr${i}_pre"; done
+
+
 
 Juntar os arquivos, alvo e referência
 
-for i in {1..22}; do plink --bfile ./REF_1kg_hgdp/1kg_hgdp_chr${i}_pre --bmerge ./PEP_INPD/juntos_PEP_INPD/PEP_INPD${i}_pre --allow-no-sex --make-bed --out ./PEP_INPD/1KG_HGDP_PEP_INPD/pre_1KG_HGDP_PEP_INPD${i}; done
+### se der problema, colocar a flag allow no sex
 
-## Não gerou arquivo "merge.missnp"
+for i in {1..22}; do plink --bfile "${file_intermed_ref}_chr${i}_pre" --bmerge "${file_intermed_alvo}_chr${i}_pre" --make-bed --out "${file_intermed_merge}_chr${i}_pre2"; done
 
-#Fazendo QC final já do arquivo juntado --Finalizada a junção das coortes
+# Juntando e fazendo o QC para ser utilizado depois para o ADMIXTURE.
+#Juntar os arquivos, alvo e referência
 
-for i in {1..22}; do plink --bfile ./PEP_INPD/1KG_HGDP_PEP_INPD/pre_1KG_HGDP_PEP_INPD${i} --geno 0.1 --maf 0.01 --make-bed --out ./PEP_INPD/1KG_HGDP_PEP_INPD/1KG_HGDP_PEP_INPD${i}; done
+########## tentando juntar 
+
+###### Se der problema em pouca gente, excluir 
+###Se der em muita gente eu vou fazer um flip e seguir a vida 
+
+### flipando uma das fitas
+plink --bfile ./arquivos_intermed/pre2_ref3anc_chr21 --flip ./arquivos_intermed/pre_alvoref_3anc_chr21-merge.missnp --make-bed --out ./arquivos_intermed/flipado_ref3anc_chr21
+### tentando juntar 
+# agora deram 12 variantes com problema, vou excluir 
+
+plink --bfile ./arquivos_intermed/flipado_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre2_alvoref_3anc_chr21
+
+#### excluondo as variantes que deram problema
+plink --bfile ./arquivos_intermed/flipado_alvopelotas3_chr21 --exclude ./arquivos_intermed/pre2_alvoref_3anc_chr21-merge.missnp --make-bed --out ./arquivos_intermed/flipado2_alvopelotas3_chr21
+
+##### agora juntando e fazendo um controle de qualidade pro arquivo final juntado 
+# juntando
+plink --bfile ./arquivos_intermed/flipado2_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre_pelotas_alvoref_3anc_chr21
+
+# controle de qualidade
+plink --bfile ./arquivos_intermed/pre_pelotas_alvoref_3anc_chr21 --maf 0.01 --geno 0.01 --mind 0.01 --make-bed --out ./merge_alvo_ref/pelotas_3anc_QCed_chr21
 
 
 
 
 
+
+
+###########
 
 
 
