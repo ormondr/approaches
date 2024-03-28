@@ -86,6 +86,7 @@ for i in {1..22}; do plink --bfile  "${file_intermed_alvo}_chr${i}_pre2" --snps-
 
 
 
+
 Juntar os arquivos, alvo e referência
 
 ### se der problema, colocar a flag allow no sex
