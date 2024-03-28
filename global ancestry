@@ -7,13 +7,18 @@
 ### HGDP +1KGenomes callset - ir para os dados divididos por cromossomos - realizei um qc na conversao de vcf para bed, bim e fam com: 
 (levar esse dado para ser usado)
 
-
-
 ### Para iniciar iremos ver a pasta que estão todos os dados
 ### Dentro desta pasta teremos subpastas, uma com as amostras referência, outra com as amostras alvo
 
 ###fazendo as pastas de trabalho
 mkdir ../"pasta_trabalho_central"/admixture
+
+
+ref_plink_file="caminho/arquivosplink"
+alvo_plink_file="caminho/arquivosplink"
+prefix_alvo="caminho/prefixodoarquivo_alvo"
+prefix_ref="caminho/prefixodoarquivo_ref"
+output_merged="caminho/arquivooutput"
 
 
 ### Se certificar que alvo e ref estão com o arquivo bim igual
