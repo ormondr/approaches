@@ -91,120 +91,65 @@ Juntar os arquivos, alvo e referência
 
 ### se der problema, colocar a flag allow no sex
 
-for i in {1..22}; do plink --bfile "${file_intermed_ref}_chr${i}_pre" --bmerge "${file_intermed_alvo}_chr${i}_pre" --make-bed --out "${file_intermed_merge}_chr${i}_pre2"; done
+for i in {1..22}; do plink --bfile "${file_intermed_ref}_chr${i}_pre" --bmerge "${file_intermed_alvo}_chr${i}_pre" --make-bed --out "${file_intermed_merge}_chr${i}_pre"; done
 
 # Juntando e fazendo o QC para ser utilizado depois para o ADMIXTURE.
 #Juntar os arquivos, alvo e referência
 
 ########## tentando juntar 
 
-###### Se der problema em pouca gente, excluir 
-###Se der em muita gente eu vou fazer um flip e seguir a vida 
+###### Se der problema em pouca gente: excluir 
+###Se der em muita gente: flip 
 
 ### flipando uma das fitas
-plink --bfile ./arquivos_intermed/pre2_ref3anc_chr21 --flip ./arquivos_intermed/pre_alvoref_3anc_chr21-merge.missnp --make-bed --out ./arquivos_intermed/flipado_ref3anc_chr21
+for i in {1..22}; do plink --bfile "${file_intermed_alvo}_chr${i}_pre" --flip "${file_intermed_merge}_chr${i}_pre-merge.missnp" --make-bed --out "${file_intermed_alvo}_chr${i}_flipado"; done
+
+
 ### tentando juntar 
-# agora deram 12 variantes com problema, vou excluir 
+# provavelmente vai dar problema em mais alguns snps
 
-plink --bfile ./arquivos_intermed/flipado_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre2_alvoref_3anc_chr21
+for i in {1..22}; do plink --bfile "${file_intermed_alvo}_chr${i}_flipado" --bmerge "${file_intermed_ref}_chr${i}_pre" --make-bed --out "${file_intermed_merge}_chr${i}_pre2"; done
 
-#### excluondo as variantes que deram problema
-plink --bfile ./arquivos_intermed/flipado_alvopelotas3_chr21 --exclude ./arquivos_intermed/pre2_alvoref_3anc_chr21-merge.missnp --make-bed --out ./arquivos_intermed/flipado2_alvopelotas3_chr21
+
+#### excluindo as variantes que deram problema
+
+##### se não tiver dado esse problema em todos os cromossomos, é melhor fazer 1 por 1, e nao um loop de cromossomos 
+
+for i in {1..22}; do plink --bfile "${file_intermed_alvo}_chr${i}_flipado" --exclude "${file_intermed_merge}_chr${i}_pre2-merge.missnp" --make-bed --out "${file_intermed_alvo}_chr${i}_flip_excl"; done
+
+####### LEMBRAR QUE: SE nao tiver dado problema em todos os chr, nao vai gerar o "flip_excl" pra todos os cromossomos, então precisa copiar os chrs que nao precisaram para a mesma terminação:
+##### assim fica igual e a gente consegue juntar
+
+cp  "${file_intermed_alvo}_chr(COLOCAR)_flipado"  "${file_intermed_alvo}_chr${COLOCAR}_flip_excl"
+
 
 ##### agora juntando e fazendo um controle de qualidade pro arquivo final juntado 
 # juntando
-plink --bfile ./arquivos_intermed/flipado2_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre_pelotas_alvoref_3anc_chr21
+for i in {1..22}; do plink --bfile "${file_intermed_alvo}_chr${i}_flip_excl" --bmerge "${file_intermed_ref}_chr${i}_pre" --make-bed --out "${file_merged}_chr${i}_preQC"; done
 
-# controle de qualidade
-plink --bfile ./arquivos_intermed/pre_pelotas_alvoref_3anc_chr21 --maf 0.01 --geno 0.01 --mind 0.01 --make-bed --out ./merge_alvo_ref/pelotas_3anc_QCed_chr21
-
-
+##### controle de qualidade
+for i in {1..22}; do plink --bfile "${file_merged}_chr${i}_preQC" --maf 0.01 --geno 0.01 --mind 0.01 --make-bed --out "${file_merged}_chr${i}_QCed"; done
 
 
+########## Agora juntando os cromossomos 
+
+####Aqui eu faço uma lista com os nomes dos arquivos
+for i in {1..22}; do echo  "${file_intermed_merge}_chr${i}_QCed" >> mergelist.txt; done
 
 
-
-###########
-
-
-
+for i in {1..22}; do plink --merge-list mergelist.txt --make-bed --out "${file_intermed_merge}_allchr_QCed"; done
 
 
 
 
 
 
-### Voltar para sua pasta de trabalho 
-cd ../
-
-# excluir positions duplicadas
-
-plink --bfile ref1kg_3anc/3anc_1kg_hgdp_chr21 --list-duplicate-vars --out ./arquivos_intermed/ref3_chr21
-
-plink --bfile ref1kg_4anc/4anc_1kg_hgdp_chr21 --list-duplicate-vars --out ./arquivos_intermed/ref4_chr21
-
-plink --bfile alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21 --list-duplicate-vars --out ./arquivos_intermed/alvo_chr21
-
-## Checando se há algo nesses arquivos 
-#### provavelmente todos os arquivos estão vazios
-cat ./arquivos_intermed/ref3_chr21.dupvar
-
-cat ./arquivos_intermed/ref4_chr21.dupvar
-
-cat ./arquivos_intermed/alvo_chr21.dupvar
 
 
 
-#Garantindo o mesmo num de SNPS nos dois arquivos e garantindos que nao há alelos trocados
-
-plink --bfile alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21 --extract ref1kg_3anc/3anc_1kg_hgdp_chr21.bim --make-bed --out ./arquivos_intermed/pre1_alvopelotas3_chr21
-
-plink --bfile alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21 --extract ref1kg_4anc/4anc_1kg_hgdp_chr21.bim --make-bed --out ./arquivos_intermed/pre1_alvopelotas4_chr21
 
 
-plink --bfile ref1kg_3anc/3anc_1kg_hgdp_chr21 --extract alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21.bim --make-bed --out ./arquivos_intermed/pre1_ref3anc_chr21
 
-plink --bfile ref1kg_4anc/4anc_1kg_hgdp_chr21 --extract alvo_pelotas/PEP_Psychv1.1_hg38_QCed_chr21.bim --make-bed --out ./arquivos_intermed/pre1_ref4anc_chr21
-
-#Extraindo as multialelicas antes de realizar o merge
-
-plink --bfile ./arquivos_intermed/pre1_alvopelotas3_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_alvopelotas3_chr21
-
-plink --bfile ./arquivos_intermed/pre1_alvopelotas4_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_alvopelotas4_chr21
-
-plink --bfile ./arquivos_intermed/pre1_ref3anc_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_ref3anc_chr21
-
-plink --bfile ./arquivos_intermed/pre1_ref4anc_chr21 --snps-only just-acgt --make-bed --out ./arquivos_intermed/pre2_ref4anc_chr21
-
-# Juntando e fazendo o QC para ser utilizado depois para o ADMIXTURE.
-#Juntar os arquivos, alvo e referência
-
-########### 3 anc
-plink --bfile ./arquivos_intermed/pre2_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre_alvoref_3anc_chr21
-
-### da um erro e fala que gerou arquivos que podem ser flipados, e indica o arquivo, dando um wc no arquivo pra ver quantos são os arquivos que deram erro
-### Deu 2197 variantes com esse problema
-wc ./arquivos_intermed/pre_alvoref_3anc_chr21-merge.missnp
-
-###### Se der problema em pouca gente, excluir 
-###Se der em muita gente eu vou fazer um flip e seguir a vida 
-
-### flipando uma das fitas
-plink --bfile ./arquivos_intermed/pre2_ref3anc_chr21 --flip ./arquivos_intermed/pre_alvoref_3anc_chr21-merge.missnp --make-bed --out ./arquivos_intermed/flipado_ref3anc_chr21
-### tentando juntar 
-# agora deram 12 variantes com problema, vou excluir 
-
-plink --bfile ./arquivos_intermed/flipado_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre2_alvoref_3anc_chr21
-
-#### excluondo as variantes que deram problema
-plink --bfile ./arquivos_intermed/flipado_alvopelotas3_chr21 --exclude ./arquivos_intermed/pre2_alvoref_3anc_chr21-merge.missnp --make-bed --out ./arquivos_intermed/flipado2_alvopelotas3_chr21
-
-##### agora juntando e fazendo um controle de qualidade pro arquivo final juntado 
-# juntando
-plink --bfile ./arquivos_intermed/flipado2_alvopelotas3_chr21 --bmerge ./arquivos_intermed/pre2_ref3anc_chr21 --make-bed --out ./arquivos_intermed/pre_pelotas_alvoref_3anc_chr21
-
-# controle de qualidade
-plink --bfile ./arquivos_intermed/pre_pelotas_alvoref_3anc_chr21 --maf 0.01 --geno 0.01 --mind 0.01 --make-bed --out ./merge_alvo_ref/pelotas_3anc_QCed_chr21
 
 
 ####### achei o admixture em uma pasta x, eu vou usar ele, mas preciso ver como instala no computador de pelotas 
