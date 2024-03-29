@@ -1,3 +1,50 @@
+
+########### fazendo a ancestralidade global com o software ADMIXTURE #####################
+
+## OBS: os arquivos bed, bim e fam precisam estar na mesma pasta 
+
+###### o "j" é o número de processadores, isso pode ser mudado de acordo com o computador
+
+
+plink_file_merged=""
+admixture=""
+
+"$admixture" "$plink_file_merged.bed" 3 -j4
+
+### O admixture vai criar dois arquivos de saída, um arquivo ".3.Q" e outro ".3.P", o que possui as informações que queremos é o ".Q"
+### criando uma pasta para deixar esse resultado, pois ele fica na pasta que você rodou, e movendo os arquivos pra essa pasta 
+
+mkdir results_admixture
+mv COLOCAR_CAMINHO_E_NOMEAQI.3.* ./results_admixture
+
+
+######## O admixture não tem colunas, então para ver melhor o que a gente quer, é preciso juntar com o arquivo fam que foi utilizado
+### mudar primeiro para a pasta "pelotas_admixture" e rodar
+
+#criando um arquivo só com a segunda coluna
+cut -d ' ' -f 2 "$plink_file_merged.fam" > idsfam_admixture.txt
+
+##juntando com o arquivo de saída do admixture
+### não salvo ainda como arquivo final pq eu quero olhar esse arquivo e ver quais são cada uma das colunas, olhando para as referências
+
+paste -d ' ' idsfam_admixture.txt COLOCAR_CAMINHO_E_NOMEAQI.3.Q > admixture_NOMEDACOORTE_3anc.txt
+
+### removendo arquivo temporário
+rm idsfam_admixture.txt
+
+### sabendo qual é cada uma delas, eu coloco esse cabeçalho (costumo colocar com nano mesmo)
+
+
+
+
+
+
+
+
+
+
+
+
 ### instalando o pong
 pip3 install pong
 
@@ -10,19 +57,19 @@ pip3 install pong
 ### Criando o arquivo ".filemap"
 nano NOME_3anc.filemap
 
-### Escrever nesse arquivo: k3r2	3	pelotas_3anc_QCed_chr21.3.Q
+### Escrever nesse arquivo: k3r2	3	COLOCAR_CAMINHO_E_NOMEAQI.3.Q
 ### Ver se o arquivo ficou certo 
-cat pelotas_3anc.filemap
+cat NOME_3anc.filemap
 
-### O arquivo "ind2map" possui a ordem que está cada um dos Ids 
+### O arquivo "ind2pop" possui a ordem que está cada um dos Ids 
 ***********### Fiz isso com um arquivo que eu tinha, mas preciso ver um jeito fácil de fazer isso com arquivo do 1kg ############
 head ../3_anc 
-awk '{print $2}' ../3_anc > ../pre_pelotas_3anc.ind2map
+awk '{print $2}' ../3_anc > ind2pop.txt
 
 head -207 ../pep_txt > ../pre_ind
 tail -118 ../pep_txt > ../pos_ind
 
-cat ../pre_ind ../pre_pelotas_3anc.ind2map ../pos_ind > ind2pop.txt
+cat ../pre_ind ../pre_pelotas_3anc.ind2map ../pos_ind > ind2pop.tx
 
 
 # precisa ver a ordem no arquivo fam pra criar esse arquivo direito
@@ -49,6 +96,8 @@ head ind2pop.txt
 
 #### O arquivo ".expanded names" tem as siglas e o que significa cada uma delas, separando a primeira e a segunda coluna por tab
 #Exemplo:
+
+ALVO Amostra alvo utilizada
 IBS	Iberian populations in Spain
 YRI	Yoruba in Ibadan, Nigeria
 Surui	Surui in Brazil
