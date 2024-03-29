@@ -1,26 +1,32 @@
-####### achei o admixture em uma pasta x, eu vou usar ele, mas preciso ver como instala no computador de pelotas 
-### fazendo a ancestralidade global 
-# Se for fazer para vários cromossomos, precisa juntar todos os cromossomos
-## os arquivos bed, bim e fam precisam estar na mesma pasta 
+########### fazendo a ancestralidade global com o software ADMIXTURE #####################
 
-/mnt/genetica_1/Phasing/admixture_linux-1.3.0/admixture ./merge_alvo_ref/pelotas_3anc_QCed_chr21.bed 3 -j4
+## OBS: os arquivos bed, bim e fam precisam estar na mesma pasta 
+
+###### o "j" é o número de processadores, isso pode ser mudado de acordo com o computador
+
+
+plink_file_merged=""
+admixture=""
+
+"$admixture" "$plink_file_merged.bed" 3 -j4
 
 ### O admixture vai criar dois arquivos de saída, um arquivo ".3.Q" e outro ".3.P", o que possui as informações que queremos é o ".Q"
 ### criando uma pasta para deixar esse resultado, pois ele fica na pasta que você rodou, e movendo os arquivos pra essa pasta 
-mkdir pelotas_admixture
-mv pelotas_3anc_QCed_chr21.3.* ./pelotas_admixture
+
+mkdir results_admixture
+mv COLOCAR_CAMINHO_E_NOMEAQI.3.* ./results_admixture
 
 
 ######## O admixture não tem colunas, então para ver melhor o que a gente quer, é preciso juntar com o arquivo fam que foi utilizado
 ### mudar primeiro para a pasta "pelotas_admixture" e rodar
 
 #criando um arquivo só com a segunda coluna
-cut -d ' ' -f 2 ../merge_alvo_ref/pelotas_3anc_QCed_chr21.fam > idsfam_admixture.txt
+cut -d ' ' -f 2 "$plink_file_merged.fam" > idsfam_admixture.txt
 
 ##juntando com o arquivo de saída do admixture
 ### não salvo ainda como arquivo final pq eu quero olhar esse arquivo e ver quais são cada uma das colunas, olhando para as referências
 
-paste -d ' ' idsfam_admixture.txt pelotas_3anc_QCed_chr21.3.Q > pelotas_3anc_chr21_preadmixture
+paste -d ' ' idsfam_admixture.txt COLOCAR_CAMINHO_E_NOMEAQI.3.Q > admixture_NOMEDACOORTE_3anc.txt
 
 ### removendo arquivo temporário
 rm idsfam_admixture.txt
