@@ -1,1 +1,79 @@
+### instalando o pong
+pip3 install pong
+
+### mudando para a pasta admixture
+
+
+#### O Pong é um arquivo de visualização do admixture e ele possui três arquivos que ele precisa para funcionar 
+# O primeiro é o arquivo ".filemap" que possui as informações de quantas ancestralidades ele precisa separar, qual arquivo do admixture usar 
+
+### Criando o arquivo ".filemap"
+nano NOME_3anc.filemap
+
+### Escrever nesse arquivo: k3r2	3	pelotas_3anc_QCed_chr21.3.Q
+### Ver se o arquivo ficou certo 
+cat pelotas_3anc.filemap
+
+### O arquivo "ind2map" possui a ordem que está cada um dos Ids 
+***********### Fiz isso com um arquivo que eu tinha, mas preciso ver um jeito fácil de fazer isso com arquivo do 1kg ############
+head ../3_anc 
+awk '{print $2}' ../3_anc > ../pre_pelotas_3anc.ind2map
+
+head -207 ../pep_txt > ../pre_ind
+tail -118 ../pep_txt > ../pos_ind
+
+cat ../pre_ind ../pre_pelotas_3anc.ind2map ../pos_ind > ind2pop.txt
+
+
+# precisa ver a ordem no arquivo fam pra criar esse arquivo direito
+
+*********** excluir essa parte de cima, mas por enquanto é só pra lembrar como eu fiz 
+
+## Exemplo:
+#EUR
+#EUR
+#EUR
+#AFR
+#AFR
+#AFR
+#AFR
+#AFR
+#NAT
+#NAT
+#NAT
+#NAT
+
+#### abrindo pra ver esse arquivo:
+
+head ind2pop.txt
+
+#### O arquivo ".expanded names" tem as siglas e o que significa cada uma delas, separando a primeira e a segunda coluna por tab
+#Exemplo:
+IBS	Iberian populations in Spain
+YRI	Yoruba in Ibadan, Nigeria
+Surui	Surui in Brazil
+Karitiana	Karitiana in Brazil
+Maya	Maya in Mexico
+Pima	Pima in Mexico
+
+pong -m pong_filemap -i ind2pop.txt -n pop_order_expandednames.txt
+
+
+
+### é possível mudar a ordem das cores
+
+nano
+#colar (no caso dos códigos de cores, o # faz parte do código:
+
+#6094c3
+#63bc6a
+#e04b4b
+
+#salvar como: cores_pong
+
+## rodar novamente: 
+pong -m pong_filemap -i ind2pop.txt -n pop_order_expandednames.txt -l cores_pong
+
+
+######## checar o dado pq ta estranho a pop iberica miscigenando e a nat americana nao
 
