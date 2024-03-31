@@ -1,0 +1,16 @@
+#####script adaptado de: https://github.com/getian107/PRScs
+
+####### Importante se certificar que o summary statistics está no formato pedido pelo programa
+####### Para utilizar os paineis de LD que o programa fornece é preciso que os dados estejam em HG37 e com o identificadoe em rsid 
+####### No computador que usamos no LinC por algum motivo o programa não funcionou, usamos em outro - verificar com cuidado para que nao tenha problema 
+
+####Baixar o programa:
+git clone https://github.com/getian107/PRScs.git
+
+##### baixar o painel de LD europeu do 1KG
+
+wget https://www.dropbox.com/s/mt6var0z96vb6fv/ldblk_1kg_eur.tar.gz?dl=0
+
+####O código base:
+#######substituir os parenteses e o que está dentro pelos caminhos)
+python3 (caminho_do_".py) --ref_dir=(caminhodirLDpanel) --bim_prefix=(caminho_prefix) --sst_file=(summstats) --n_gwas=(n_wgas) --out_dir=(output)
