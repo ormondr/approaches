@@ -5,6 +5,7 @@
 ####### No computador que usamos no LinC por algum motivo o programa não funcionou, usamos em outro - verificar com cuidado para que nao tenha problema 
 
 ####Baixar o programa:
+
 git clone https://github.com/getian107/PRScs.git
 
 ##### baixar o painel de LD europeu do 1KG
@@ -12,5 +13,31 @@ git clone https://github.com/getian107/PRScs.git
 wget https://www.dropbox.com/s/mt6var0z96vb6fv/ldblk_1kg_eur.tar.gz?dl=0
 
 ####O código base:
-#######substituir os parenteses e o que está dentro pelos caminhos)
-python3 (caminho_do_".py) --ref_dir=(caminhodirLDpanel) --bim_prefix=(caminho_prefix) --sst_file=(summstats) --n_gwas=(n_wgas) --out_dir=(output)
+#######substituir pelos arquivos e caminhos
+
+python3 caminho_do_.py --ref_dir=caminho_dir_LDpanel --bim_prefix=caminho_prefix --sst_file=summstats --n_gwas=n_wgas --out_dir=outputdir_prefix
+
+
+######## O arquivo de saída sai como ".profile""
+## O que o PRS-CS faz é ponderar os tamanhos de efeito, e agora o score de fato é calculado no plink 
+
+####### Calculando o score no plink
+
+#### Primeiro Juntando o arquivo que sai separado por cromossomos - eu junto com cat e salvo com o prefixo "concat"
+
+cat outputdir_prefix* > concat_output_prefix
+
+#### agora sim fazendo o score, eu gosto de salvar com o nome da coorte, do phenotipo, os parametros que eu usei e qual ld 
+### o arquivo de saída é ".profile"
+
+plink --bfile arquivo_QCed --score concat_output_prefix 2 4 6 sum --out coorte_pheno_phiauto_ldeur
+
+
+############### Calcluando PCs no Plink ################
+########## Como o score nao é calculado diretamente, voce pode só fazer o score para a amostra inteira, porém os PCs precisam ser calculados para a amostra que possui o fenótipo desejado (caso e controle para a amostra se binário, ou a medida contínua)
+#### primeiro fazer um "--keep" com essa amostra que possui o fenótipo
+
+##### depois é preciso fazer o calculo de pcs 
+#a "lista_pheno" precisa ter o FID e o IID das pessoas que possuem esse phenotipo
+
+plink --bfile  arquivo_QCed --keep lista_pheno --out arquivo_pheno_QCed
