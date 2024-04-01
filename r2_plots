@@ -1,0 +1,137 @@
+Visualização dos dados e calculo de r2
+
+
+
+############ Primeiro chamando os dados do PGS para o script 
+
+getwd()
+
+##mudar para pasta das análises
+setwd("caminho")
+
+##chamar primeiro os dados da amostra alvo
+
+####chamar fenotipo 
+pheno_alvo <- read.table("", h=T)
+
+## mudar o fenótipo de 1 e 2 para 0 e 1, se binário, pois está pode ajudar na regressao
+
+pheno_alvo$PHENO <- ifelse(pheno_esquizo_cronicos$PHENO == 1, "0", ifelse(pheno_esquizo_cronicos$PHENO == 2, "1", pheno_esquizo_cronicos$PHENO))
+
+######chamar pcs e sexo para acrescentar com o tabelona
+#### os dados de sexo tambem podem estar no .fam, assim como o fenótipo, assim nao sendo necessario chamar aqui
+
+pcs_alvo <- read.table("caminho_arquivo.eigenvec", h=T) 
+sexo_alvo <- read.table("caminho_arquivo.eigenvec", h=T) 
+
+# Substitua os valores na coluna "sexo"
+sexo_alvo$SEXO <- ifelse(sexo_alvo$SEXO == 1, "Masculino", "Feminino")
+
+
+######### CARREGO TODOS OS SCORES AQUI ###################
+####### fenótipo 1 ############
+
+## PRS-cs ##
+
+cs_alvo_pheno1 <- read.table("caminho_arquivo.profile", header = T)[,c("IID", "SCORESUM")]
+
+
+########## juntando tudo em uma tabelona só 
+
+###juntar as informações de casPS e PRSice em uma tabela só 
+###Mudar as tabelas se necessário
+## Caso a biblioteca não esteja instalada é necessário instalar com a linha abaixo:
+#install.packages("plyr") 
+
+
+library(plyr)
+pgs_alvo_pheno1 <- join_all(list(pcs_alvo, sexo_alvo, pheno_alvo, PRScs_alvo_pheno1),by = "IID", type="inner")
+
+
+############# limpando residuos de pcs ####
+####PRSice2
+
+#### usei 10 PCs pq quando rodei no PRSice rodei covariando pra 10
+
+fit_PRScs_pheno1 <- lm(SCORESUM ~ PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10, data = pgs_alvo_pheno1)
+pgs_alvo_pheno1$CS<- residuals(fit_PRScs_pheno1)
+
+
+################ Teste de Normalidade ##############
+
+######## Teste de Normalidade #########
+
+shapiro.test(pgs_alvo_pheno1$CS)
+
+
+######### R2 de Nagelkerke - no caso de variável binária 
+
+## Caso a biblioteca não esteja instalada é necessário instalar com a linha abaixo:
+#install.packages("fmsb")
+
+library(fmsb)
+
+#### se tentar fazer o R2 e dar problema, pode ser necessario rodar:
+pgs_alvo_pheno1$PHENO<-as.numeric(pgs_alvo_pheno1$PHENO)
+
+R2_pgs_alvo_pheno1 <- (glm(PHENO ~ CS + SEXO, data=pgs_alvo_pheno1, family=binomial("logit")))
+summary(R2_pgs_alvo_pheno1)
+NagelkerkeR2(R2_pgs_alvo_pheno1)
+
+
+####### Fazendo a curva de distribuicao separando entre caso e controle 
+
+### Primeiro calculando a linha da media
+
+#CS
+mean_pheno1 <- ddply(R2_pgs_alvo_pheno1, "PHENO", summarise, grp.mean= mean(CS))
+
+
+######## Desta forma eu garanto que o azul seja controle (0) e o vermelho caso (1)
+
+##fazendo a curva do PRSice
+ggplot(pgs_alvo_pheno1, aes(x = CS, fill = factor(PHENO))) +
+  geom_density(alpha = 0.5) + # alpha = densidade da cor
+  geom_vline(data = mean_pheno1, aes(xintercept = grp.mean, color = factor(PHENO)),
+             linetype = "dashed", size = 0.8) + # linha da média
+  scale_fill_manual(values = c("#377EB8", "#E41A1C"), labels = c("0", "1")) + #cor dos gráficos
+  scale_color_manual(values = c("#377EB8", "#E41A1C"), labels = c("0", "1")) + #cor da linha da média
+  theme_classic() + # um dos temas para gráficos
+  theme(axis.text = element_text(color = "black", size = 12)) +
+  theme(axis.title = element_text(color = "black", size = 14, face = "bold")) +
+  theme(plot.title = element_text(color = "black", size = 15, face = "bold.italic"),
+        legend.position = "right") + # Fonte do título e posição da legenda
+  scale_x_continuous(label = scales::comma_format(decimal.mark = ".")) +
+  ggtitle("Density Plot PGS") + # Título
+  labs(x = "Escore Poligênico de Risco", y = "Densidade") # Nome do eixo x e y
+
+
+
+############################ Variável Contínua - como altura por ex ######################
+
+
+####### Para variável contínua eu tiro os resíduos como no anterior, porém para calcular o R2 eu uso o score comum, pq no calculo ele faz a correcao
+
+
+Null_alvo <-lm(PHENO ~ SEXO + PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10, pgs_alvo_pheno1) 
+
+Full_alvo <-lm(PHENO ~ SCORESUM + SEXO + PC1 + PC2 + PC3 + PC4 + PC5 + PC6 + PC7 + PC8 + PC9 + PC10, pgs_alvo_pheno1)  
+SSE.null_alvo <-sum(Null_alvo$residuals**2)  
+SSE.full_alvo <-sum(Full_alvo**2)  
+R2.partial_pgs_alvo <-(SSE.null_alvo-SSE.full_alvo)/SSE.null_alvo 
+
+
+############ Para o gráfico eu uso o score corrigido
+
+########## Fazendo o scatterplot - gráfico de pontos 
+
+# Crie um scatterplot com ggplot2
+ ggplot(pgs_alvo_pheno1, aes(x = CS, y = PHENO)) +
+   geom_point(color = "steelblue", alpha = 0.6, size = 3) +  # Pontos
+   geom_smooth(method = "lm", color = "darkred", se = FALSE) +  # Linha de regressão
+   labs(x = "Escore Poligênico", y = "Pheno") +  # Rótulos dos eixos
+   ggtitle("Scatterplot PRS-CS") +  # Título do gráfico
+   theme_custom()  # Aplicando o tema personalizado
+
+
+
